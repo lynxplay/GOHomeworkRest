@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Site made with Mobirise Website Builder v4.8.3, https://mobirise.com -->
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="generator" content="Mobirise v4.8.3, mobirise.com">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <link rel="shortcut icon" href="assets/images/logo4.png" type="image/x-icon">
+    <meta name="description" content="">
+    <title>Home</title>
+    <link rel="stylesheet" href="assets/web/assets/mobirise-icons/mobirise-icons.css">
+    <link rel="stylesheet" href="assets/tether/tether.min.css">
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap-grid.min.css">
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap-reboot.min.css">
+    <link rel="stylesheet" href="assets/theme/css/style.css">
+    <link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css" type="text/css">
+
+</head>
+<body>
+<section class="timeline2 cid-r4ohUZ4Cay" id="timeline2-2">
+
+
+    <div class="container align-center">
+        <h2 class="mbr-section-title pb-3 mbr-fonts-style display-2">
+            Upcoming Homework</h2>
+        <h3 class="mbr-section-subtitle pb-5 mbr-fonts-style display-5">
+            See your upcoming homework</h3>
+
+        {{range .payload}}
+        <div class="container timelines-container" mbri-timelines="">
+            <div class="row timeline-element {{ .IsReverse }} {{ .HasNextNode }}">
+                <span class="iconsBackground">
+                    <span class="mbri-pages mbr-iconfont"></span>
+                </span>
+                <div class="col-xs-12 col-md-6 align-left">
+                    <div class="timeline-text-content">
+                        <h4 class="mbr-timeline-title pb-3 mbr-fonts-style display-5">
+                            {{ .Title }}
+                        </h4>
+                        <p class="mbr-timeline-text mbr-fonts-style display-7">
+                           {{ .Description }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{ end }}
+    </div>
+</section>
+
+section class="engine"><a href="https://mobiri.se/q">free responsive site templates</a></section><section class="mbr-section form1 cid-r4ogCfBtrw" id="form1-0">
+
+
+
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="title col-12 col-lg-8">
+
+                <h3 class="mbr-section-subtitle align-center mbr-light pb-3 mbr-fonts-style display-5">
+                    Easily add new homework to the database</h3>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="media-container-column col-lg-8" data-form-type="formoid">
+
+
+                <form class="mbr-form" action="upload" method="post">
+                    <div class="row row-sm-offset">
+                        <div class="col-md-4 multi-horizontal" data-for="name">
+                            <div class="form-group">
+                                <label class="form-control-label mbr-fonts-style display-7" for="name-form1-0">Class</label>
+                                <input type="text" class="form-control" name="name" data-form-field="Name" required="" id="name-form1-0">
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <div class="form-group" data-for="message">
+                        <label class="form-control-label mbr-fonts-style display-7" for="message-form1-0">Homework<br></label>
+                        <textarea type="text" class="form-control" name="message" rows="7" data-form-field="Message" id="message-form1-0"></textarea>
+                    </div>
+
+                    <span class="input-group-btn"><button href="" type="submit" class="btn btn-primary btn-form display-4"><span class="mbri-play mbr-iconfont mbr-iconfont-btn"></span>SEND FORM</button></span>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<script src="assets/web/assets/jquery/jquery.min.js"></script>
+<script src="assets/popper/popper.min.js"></script>
+<script src="assets/tether/tether.min.js"></script>
+<script src="assets/bootstrap/js/bootstrap.min.js"></script>
+<script src="assets/smoothscroll/smooth-scroll.js"></script>
+<script src="assets/theme/js/script.js"></script>
+
+
+</body>
+</html>
