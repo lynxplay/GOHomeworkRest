@@ -96,7 +96,7 @@ function init() {
     initTest();
 
     // Checks if this script is running in a frame
-    if (top !== self) {
+    if (top != self) {
         isFrame = true;
     }
 

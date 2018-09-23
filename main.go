@@ -2,36 +2,89 @@ package main
 
 import (
 	"fmt"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
+	"sort"
+	"strconv"
+	"time"
 )
+
+var connection *DatabaseConnection
+var userCache = make(map[int]*AccountData)
 
 func main() {
 	router := gin.New()
+	restServerConfiguration, e := LoadServerConfiguration("configuration.json", RestServerConfiguration{
+		SessionKey:       "superSecretSessionKey",
+		Database:         "gin-rest",
+		DatabaseHost:     "localhost",
+		DatabasePassword: "password",
+		DatabaseUsername: "username",
+		DatabasePort:     3306,
+	})
+	check(e)
+
+	fmt.Println("[GIN-INFO] Connecting to remote sql server...")
+	connection = openConnection(restServerConfiguration.DatabaseHost,
+		restServerConfiguration.DatabasePort,
+		restServerConfiguration.DatabaseUsername,
+		restServerConfiguration.DatabasePassword,
+		restServerConfiguration.Database)
+	fmt.Println("[GIN-INFO] Connected to sql server!")
+
+	store := memstore.NewStore([]byte(restServerConfiguration.SessionKey))
+	fmt.Println("[GIN-INFO] Using memstore key", restServerConfiguration.SessionKey)
 
 	router.LoadHTMLGlob("resources/*.html")
 	router.Static("/assets", "resources/assets")
+	router.Use(sessions.Sessions("gin-rest-sessions", store))
 
 	router.GET("/", func(context *gin.Context) {
+		session := sessions.Default(context)
+		account := getAccountData(session)
+		if account == nil || !account.isSessionValid() {
+			context.Redirect(302, "/login.html")
+			return
+		}
+
+		homework := mapHomeworkToTimelineElements(account.HomeworkArray)
+		sort.Slice(homework, func(h1, h2 int) bool {
+			return homework[h1].DueDateRaw.Before(*homework[h2].DueDateRaw)
+		})
 
 		context.HTML(200, "index.html", gin.H{
-			"payload": mapHomeworkToTimelineElements(&[]Homework{
-				{Title: "Math Homework", Description: "What is 1+1"},
-				{Title: "German Homework", Description: "Read some random books"},
-				{Title: "DataStructure Homework", Description: "Work on that SQL thingy"},
-			}),
+			"payload":  mapHomeworkToTimelineElements(account.HomeworkArray),
+			"Username": account.Username,
 		})
 	})
-	router.POST("/upload", func(context *gin.Context) {
-		bytes, _ := context.GetRawData()
-		fmt.Println(string(bytes[:]))
+
+	router.GET("/login.html", func(context *gin.Context) {
+		context.HTML(200, "login.html", gin.H{})
 	})
 
-	router.Run()
-}
+	router.POST("/login.html", func(context *gin.Context) {
+		context.Request.ParseForm()
 
-type Homework struct {
-	Title       string
-	Description string
+		username := context.Request.FormValue("username")
+		password := context.Request.FormValue("password")
+
+		username = "LynxPlay"
+		password = "123"
+
+		account := loadAccount(connection, username, password)
+		if account == nil {
+			context.JSON(403, "Could not find the user account")
+		} else {
+			session := sessions.Default(context)
+			session.Set("userID", account.Id)
+			userCache[account.Id] = account
+			session.Save()
+
+			context.Redirect(302, "/")
+		}
+	})
+	router.Run()
 }
 
 type HomeworkTimelineElement struct {
@@ -39,26 +92,60 @@ type HomeworkTimelineElement struct {
 	HasNextNode string
 	Title       string
 	Description string
+	DueDate     string
+	DueDateRaw  *time.Time
+	Icon        string
 }
 
-func mapHomeworkToTimelineElements(homework *[]Homework) []HomeworkTimelineElement {
-	var timelineElements []HomeworkTimelineElement
-	for index, homework := range *homework {
-		timelineElements = append(timelineElements, createHomeworkTimelineObject(homework.Title, homework.Description, index%2 == 0))
+func mapHomeworkToTimelineElements(homework []*Homework) []*HomeworkTimelineElement {
+	var timelineElements []*HomeworkTimelineElement
+	for index, homework := range homework {
+		timelineElements = append(timelineElements,
+			createHomeworkTimelineObject(homework, index%2 == 0))
 	}
-	timelineElements[len(timelineElements)-1].HasNextNode = ""
+
+	length := len(timelineElements)
+	if length > 0 {
+		timelineElements[length-1].HasNextNode = ""
+	}
+
 	return timelineElements
 }
 
-func createHomeworkTimelineObject(title string, description string, reverse bool) HomeworkTimelineElement {
+func createHomeworkTimelineObject(homework *Homework, reverse bool) *HomeworkTimelineElement {
 	element := HomeworkTimelineElement{HasNextNode: "separline"}
-	element.Title = title
-	element.Description = description
+	element.Title = homework.Class.Title
+	element.Description = homework.Description
+	element.Icon = homework.Class.Icon
+	element.DueDate = strconv.Itoa(homework.DueDay.Day()) + "." + strconv.Itoa(int(homework.DueDay.Month())) + "." + strconv.Itoa(homework.DueDay.Year())
+	element.DueDateRaw = homework.DueDay
 	if reverse {
 		element.IsReverse = "reverse"
 	} else {
 		element.IsReverse = ""
 	}
 
-	return element
+	return &element
+}
+
+func getAccountData(s sessions.Session) *AccountData {
+	if s == nil {
+		return nil
+	}
+
+	userID := s.Get("userID")
+	if userID == nil {
+		return nil
+	}
+
+	if value, castable := userID.(int); castable {
+		return userCache[value]
+	}
+	return nil
+}
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
