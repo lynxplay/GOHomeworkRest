@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 )
 
+//RestServerConfiguration was outsourced
 type RestServerConfiguration struct {
 	SessionKey string
 
@@ -13,12 +14,15 @@ type RestServerConfiguration struct {
 	DatabaseUsername string
 	DatabasePassword string
 	Database         string
+
+	DatabaseFileName string
 }
 
+//LoadServerConfiguration was outsourced
 func LoadServerConfiguration(path string, defaultConfiguration RestServerConfiguration) (*RestServerConfiguration, error) {
 	bytes, e := ioutil.ReadFile(path)
 	if e != nil {
-		data, marshallError := json.Marshal(defaultConfiguration)
+		data, marshallError := json.MarshalIndent(defaultConfiguration, "", "	")
 		if marshallError != nil {
 			panic(marshallError)
 		}

@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 //DatabaseConnection has been outsourced to the sql file as the type is handled in here
@@ -29,8 +29,20 @@ func (d *DatabaseConnection) GetConnection() *sql.DB {
 	return d.connection
 }
 
-func openConnection(host string, port int, username string, password string, database string) (*DatabaseConnection, error) {
+func openMysqlConnection(host string, port int, username string, password string, database string) (*DatabaseConnection, error) {
 	connection, e := sql.Open("mysql", username+":"+password+"@tcp("+host+":"+strconv.Itoa(port)+")/"+database)
+	if e != nil {
+		return nil, e
+	}
+
+	wrapper := DatabaseConnection{connection: connection}
+	connectionError := wrapper.Open()
+
+	return &wrapper, connectionError
+}
+
+func openSQLLiteConnection(databaseName string) (*DatabaseConnection, error) {
+	connection, e := sql.Open("sqllite", databaseName)
 	if e != nil {
 		return nil, e
 	}
@@ -94,7 +106,7 @@ func loadHomework(connection *DatabaseConnection, playerId int, classes []*Class
 		PlayerID    int
 		ClassId     int
 		Description string
-		DueDay      mysql.NullTime
+		DueDay      time.Time
 		homework    []*Homework
 	)
 

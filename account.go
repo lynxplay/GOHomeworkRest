@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+//AccountData was
 type AccountData struct {
 	Username  string
 	ID        int
@@ -13,12 +14,14 @@ type AccountData struct {
 	HomeworkArray []*Homework
 }
 
+//Class was outsourced
 type Class struct {
 	ID    int
 	Title string
 	Icon  string
 }
 
+//Homework was outsourced
 type Homework struct {
 	Class       *Class
 	Description string

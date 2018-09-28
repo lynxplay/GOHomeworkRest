@@ -23,18 +23,25 @@ func main() {
 		DatabasePassword: "password",
 		DatabaseUsername: "username",
 		DatabasePort:     3306,
+		DatabaseFileName: "./gin-rest-database.db",
 	})
 	check(e)
 
 	fmt.Println("[GIN-INFO] Connecting to remote sql server...")
-	connection, e = openConnection(restServerConfiguration.DatabaseHost,
+	connection, e = openMysqlConnection(restServerConfiguration.DatabaseHost,
 		restServerConfiguration.DatabasePort,
 		restServerConfiguration.DatabaseUsername,
 		restServerConfiguration.DatabasePassword,
 		restServerConfiguration.Database)
 	if e != nil {
-		fmt.Println("[GIN-ERROR] Could not connect to the database")
-		panic(e)
+		fmt.Println("[GIN-ERROR] Could not connect to remote sql server!!")
+		fmt.Println("[GIN-INFO] Opening SQLLite database..")
+
+		connection, e = openSQLLiteConnection(restServerConfiguration.DatabaseFileName)
+		if e != nil {
+			fmt.Println("[GIN-ERROR] Could not open connection to SQLLite file")
+			panic(e)
+		}
 	} else {
 		fmt.Println("[GIN-INFO] Connected to sql server!")
 	}
