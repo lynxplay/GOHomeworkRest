@@ -6,7 +6,7 @@ import (
 
 type AccountData struct {
 	Username  string
-	Id        int
+	ID        int
 	LoginTime time.Time
 
 	ClassArray    []*Class
@@ -14,7 +14,7 @@ type AccountData struct {
 }
 
 type Class struct {
-	Id    int
+	ID    int
 	Title string
 	Icon  string
 }

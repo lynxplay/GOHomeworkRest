@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/memstore"
-	"github.com/gin-gonic/gin"
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/memstore"
+	"github.com/gin-gonic/gin"
 )
 
 var connection *DatabaseConnection
@@ -26,12 +27,17 @@ func main() {
 	check(e)
 
 	fmt.Println("[GIN-INFO] Connecting to remote sql server...")
-	connection = openConnection(restServerConfiguration.DatabaseHost,
+	connection, e = openConnection(restServerConfiguration.DatabaseHost,
 		restServerConfiguration.DatabasePort,
 		restServerConfiguration.DatabaseUsername,
 		restServerConfiguration.DatabasePassword,
 		restServerConfiguration.Database)
-	fmt.Println("[GIN-INFO] Connected to sql server!")
+	if e != nil {
+		fmt.Println("[GIN-ERROR] Could not connect to the database")
+		panic(e)
+	} else {
+		fmt.Println("[GIN-INFO] Connected to sql server!")
+	}
 
 	store := memstore.NewStore([]byte(restServerConfiguration.SessionKey))
 	fmt.Println("[GIN-INFO] Using memstore key", restServerConfiguration.SessionKey)
@@ -77,14 +83,15 @@ func main() {
 			context.JSON(403, "Could not find the user account")
 		} else {
 			session := sessions.Default(context)
-			session.Set("userID", account.Id)
-			userCache[account.Id] = account
+			session.Set("userID", account.ID)
+			userCache[account.ID] = account
 			session.Save()
 
 			context.Redirect(302, "/")
 		}
 	})
-	router.Run()
+
+	router.Run(":8888")
 }
 
 type HomeworkTimelineElement struct {

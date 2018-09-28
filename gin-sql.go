@@ -2,39 +2,46 @@ package main
 
 import (
 	"database/sql"
-	"github.com/go-sql-driver/mysql"
-	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 	"time"
+
+	"github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
+//DatabaseConnection has been outsourced to the sql file as the type is handled in here
 type DatabaseConnection struct {
 	connection *sql.DB
 }
 
+//Open has been outsourced as it handles DatabaseConnection
 func (d *DatabaseConnection) Open() error {
 	return d.connection.Ping()
 }
 
+//Close has been outsourced as it handles DatabaseConnection
 func (d *DatabaseConnection) Close() error {
 	return d.connection.Close()
 }
 
+//GetConnection has been outsourced as it handles DatabaseConnection
 func (d *DatabaseConnection) GetConnection() *sql.DB {
 	return d.connection
 }
 
-func openConnection(host string, port int, username string, password string, database string) *DatabaseConnection {
+func openConnection(host string, port int, username string, password string, database string) (*DatabaseConnection, error) {
 	connection, e := sql.Open("mysql", username+":"+password+"@tcp("+host+":"+strconv.Itoa(port)+")/"+database)
-	check(e)
+	if e != nil {
+		return nil, e
+	}
 
 	wrapper := DatabaseConnection{connection: connection}
-	wrapper.Open()
+	connectionError := wrapper.Open()
 
-	return &wrapper
+	return &wrapper, connectionError
 }
 
-func loadAccount(connetion *DatabaseConnection, username string, password string) (*AccountData) {
+func loadAccount(connetion *DatabaseConnection, username string, password string) *AccountData {
 	userResultSet, e := connection.GetConnection().Query("SELECT * FROM users WHERE username=? AND password=?", username, password)
 	check(e)
 
@@ -48,29 +55,29 @@ func loadAccount(connetion *DatabaseConnection, username string, password string
 
 	return &AccountData{
 		Username:      username,
-		Id:            id,
+		ID:            id,
 		LoginTime:     time.Now(),
 		ClassArray:    classes,
 		HomeworkArray: loadHomework(connection, id, classes),
 	}
 }
 
-func loadClasses(connection *DatabaseConnection, playerId int) []*Class {
-	classResultSet, err := connection.GetConnection().Query("SELECT * FROM classes WHERE playerID = ?", playerId)
+func loadClasses(connection *DatabaseConnection, playerID int) []*Class {
+	classResultSet, err := connection.GetConnection().Query("SELECT * FROM classes WHERE playerID = ?", playerID)
 	check(err)
 
 	var (
-		PlayerID    int
-		Id      int
-		Title   string
-		Icon    string
-		classes []*Class
+		PlayerID int
+		ID       int
+		Title    string
+		Icon     string
+		classes  []*Class
 	)
 
 	for classResultSet.Next() {
-		classResultSet.Scan(&PlayerID, &Id, &Title, &Icon)
+		classResultSet.Scan(&PlayerID, &ID, &Title, &Icon)
 		classes = append(classes, &Class{
-			Id:    Id,
+			ID:    ID,
 			Title: Title,
 			Icon:  Icon,
 		})
@@ -94,7 +101,7 @@ func loadHomework(connection *DatabaseConnection, playerId int, classes []*Class
 	for homeworkResultSet.Next() {
 		homeworkResultSet.Scan(&PlayerID, &ClassId, &Description, &DueDay)
 		homework = append(homework, &Homework{
-			Class:       classes[ClassId - 1],
+			Class:       classes[ClassId-1],
 			Description: Description,
 			DueDay:      &DueDay.Time,
 		})
