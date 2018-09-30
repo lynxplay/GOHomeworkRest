@@ -2,7 +2,9 @@ package main
 
 import (
 	"database/sql"
+	"io/ioutil"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -29,6 +31,26 @@ func (d *DatabaseConnection) GetConnection() *sql.DB {
 	return d.connection
 }
 
+//ExecuteSQLScript was outsourced
+func (d *DatabaseConnection) ExecuteSQLScript(fileName string) error {
+	file, err := ioutil.ReadFile(fileName)
+
+	if err != nil {
+		return err
+	}
+
+	requests := strings.Split(string(file), ";")
+
+	for _, request := range requests {
+		_, err := d.connection.Exec(request)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func openMysqlConnection(host string, port int, username string, password string, database string) (*DatabaseConnection, error) {
 	connection, e := sql.Open("mysql", username+":"+password+"@tcp("+host+":"+strconv.Itoa(port)+")/"+database)
 	if e != nil {
@@ -42,7 +64,7 @@ func openMysqlConnection(host string, port int, username string, password string
 }
 
 func openSQLLiteConnection(databaseName string) (*DatabaseConnection, error) {
-	connection, e := sql.Open("sqllite", databaseName)
+	connection, e := sql.Open("sqlite3", databaseName)
 	if e != nil {
 		return nil, e
 	}
@@ -75,7 +97,7 @@ func loadAccount(connetion *DatabaseConnection, username string, password string
 }
 
 func loadClasses(connection *DatabaseConnection, playerID int) []*Class {
-	classResultSet, err := connection.GetConnection().Query("SELECT * FROM classes WHERE playerID = ?", playerID)
+	classResultSet, err := connection.GetConnection().Query("SELECT * FROM classes WHERE player_id = ?", playerID)
 	check(err)
 
 	var (
@@ -99,23 +121,23 @@ func loadClasses(connection *DatabaseConnection, playerID int) []*Class {
 }
 
 func loadHomework(connection *DatabaseConnection, playerId int, classes []*Class) []*Homework {
-	homeworkResultSet, err := connection.GetConnection().Query("SELECT * FROM homework WHERE playerID = ?", playerId)
+	homeworkResultSet, err := connection.GetConnection().Query("SELECT * FROM homework WHERE player_id = ?", playerId)
 	check(err)
 
 	var (
 		PlayerID    int
-		ClassId     int
+		ClassID     int
 		Description string
 		DueDay      time.Time
 		homework    []*Homework
 	)
 
 	for homeworkResultSet.Next() {
-		homeworkResultSet.Scan(&PlayerID, &ClassId, &Description, &DueDay)
+		homeworkResultSet.Scan(&PlayerID, &ClassID, &Description, &DueDay)
 		homework = append(homework, &Homework{
-			Class:       classes[ClassId-1],
+			Class:       classes[ClassID-1],
 			Description: Description,
-			DueDay:      &DueDay.Time,
+			DueDay:      &DueDay,
 		})
 	}
 

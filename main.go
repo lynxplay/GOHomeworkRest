@@ -35,7 +35,7 @@ func main() {
 		restServerConfiguration.Database)
 	if e != nil {
 		fmt.Println("[GIN-ERROR] Could not connect to remote sql server!!")
-		fmt.Println("[GIN-INFO] Opening SQLLite database..")
+		fmt.Println("[GIN-INFO] Opening SQLLite database...")
 
 		connection, e = openSQLLiteConnection(restServerConfiguration.DatabaseFileName)
 		if e != nil {
@@ -44,6 +44,15 @@ func main() {
 		}
 	} else {
 		fmt.Println("[GIN-INFO] Connected to sql server!")
+	}
+
+	fmt.Println("[GIN-INFO] Executing sql setup script...")
+	setupError := connection.ExecuteSQLScript("./sql-setup.sql")
+	if setupError != nil {
+		fmt.Println("[GIN-ERROR] Could not execute setup script")
+		panic(setupError)
+	} else {
+		fmt.Println("[GIN-INFO] Finished database setup")
 	}
 
 	store := memstore.NewStore([]byte(restServerConfiguration.SessionKey))
@@ -79,11 +88,10 @@ func main() {
 	router.POST("/login.html", func(context *gin.Context) {
 		context.Request.ParseForm()
 
-		username := context.Request.FormValue("username")
-		password := context.Request.FormValue("password")
+		username := context.Request.FormValue("signin-email")
+		password := context.Request.FormValue("signin-password")
 
-		username = "LynxPlay"
-		password = "123"
+		fmt.Println(username + " -> " + password)
 
 		account := loadAccount(connection, username, password)
 		if account == nil {
@@ -98,7 +106,7 @@ func main() {
 		}
 	})
 
-	router.Run(":8888")
+	router.Run()
 }
 
 type HomeworkTimelineElement struct {
