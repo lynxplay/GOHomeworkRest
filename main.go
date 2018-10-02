@@ -91,8 +91,6 @@ func main() {
 		username := context.Request.FormValue("signin-email")
 		password := context.Request.FormValue("signin-password")
 
-		fmt.Println(username + " -> " + password)
-
 		account := loadAccount(connection, username, password)
 		if account == nil {
 			context.JSON(403, "Could not find the user account")

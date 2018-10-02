@@ -7,7 +7,8 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -78,6 +79,7 @@ func openSQLLiteConnection(databaseName string) (*DatabaseConnection, error) {
 func loadAccount(connetion *DatabaseConnection, username string, password string) *AccountData {
 	userResultSet, e := connection.GetConnection().Query("SELECT * FROM users WHERE username=? AND password=?", username, password)
 	check(e)
+	defer userResultSet.Close()
 
 	if !userResultSet.Next() {
 		return nil
@@ -99,6 +101,7 @@ func loadAccount(connetion *DatabaseConnection, username string, password string
 func loadClasses(connection *DatabaseConnection, playerID int) []*Class {
 	classResultSet, err := connection.GetConnection().Query("SELECT * FROM classes WHERE player_id = ?", playerID)
 	check(err)
+	defer classResultSet.Close()
 
 	var (
 		PlayerID int
@@ -123,21 +126,28 @@ func loadClasses(connection *DatabaseConnection, playerID int) []*Class {
 func loadHomework(connection *DatabaseConnection, playerId int, classes []*Class) []*Homework {
 	homeworkResultSet, err := connection.GetConnection().Query("SELECT * FROM homework WHERE player_id = ?", playerId)
 	check(err)
+	defer homeworkResultSet.Close()
 
 	var (
 		PlayerID    int
 		ClassID     int
+		HomeworkID  int
 		Description string
-		DueDay      time.Time
+		DueDay      mysql.NullTime
 		homework    []*Homework
 	)
 
 	for homeworkResultSet.Next() {
-		homeworkResultSet.Scan(&PlayerID, &ClassID, &Description, &DueDay)
+		homeworkResultSet.Scan(&PlayerID, &ClassID, &HomeworkID, &Description, &DueDay)
+
+		if len(classes) < ClassID {
+			continue
+		}
+
 		homework = append(homework, &Homework{
-			Class:       classes[ClassID-1],
+			Class:       classes[ClassID],
 			Description: Description,
-			DueDay:      &DueDay,
+			DueDay:      &DueDay.Time,
 		})
 	}
 
